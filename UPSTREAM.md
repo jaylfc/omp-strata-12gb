@@ -1,8 +1,8 @@
 # Upstream pin
 
 tested_omp: 18.6.1
-upstream_latest_seen: v18.12.3
-upstream_latest_seen_at: 2026-10-20
+upstream_latest_seen: v18.12.5
+upstream_latest_seen_at: 2026-10-21
 
 The profile was run on upstream omp 18.4.4 until 2026-10-06 and on 18.6.1 since. The daily check records the newest can1357/oh-my-pi release tag. It may rewrite the two `upstream_latest_seen` and `upstream_latest_seen_at` lines. `tested_omp` changes when that version has actually been run with this profile.
 
