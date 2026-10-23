@@ -66,8 +66,8 @@ echo "installed $agent/extensions/operator-pause.ts"
 install -m 644 "$root/agent/extensions/handoff-speed.ts" "$agent/extensions/handoff-speed.ts"
 echo "installed $agent/extensions/handoff-speed.ts"
 
-# Claims and evidence: done-gate (with verify_item), goal-verify, lessons; the watcher (log mode unless settings.env says otherwise).
-for ext in done-gate.ts goal-verify.ts lessons.ts watcher.ts; do
+# Claims and evidence: done-gate (with verify_item), goal-verify, lessons, tasklist; the watcher (log mode unless settings.env says otherwise).
+for ext in done-gate.ts goal-verify.ts lessons.ts tasklist.ts watcher.ts; do
   install -m 644 "$root/agent/extensions/$ext" "$agent/extensions/$ext"
   echo "installed $agent/extensions/$ext"
 done

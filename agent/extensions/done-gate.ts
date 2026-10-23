@@ -750,9 +750,26 @@ function cwdOf(ctx: Ctx | undefined): string {
 
 type TypeBox = { Type: { Object: (props: Record<string, unknown>) => unknown; String: (opts?: Record<string, unknown>) => unknown; Number: (opts?: Record<string, unknown>) => unknown; Optional: (schema: unknown) => unknown } };
 
-/** The verify_item command for a task: given, else the last one used for it, else one in backticks in the task text. */
+const TASKLIST_KEY = "__ompStrataTasklist";
+function tasklistProbeGetter(): ((task: string) => string | undefined) | undefined {
+	const g = globalThis as Record<string, unknown>;
+	const getter = g[TASKLIST_KEY];
+	return typeof getter === "function" ? getter : undefined;
+}
+
+export function registerTasklistProbe(getter: (task: string) => string | undefined): void {
+	const g = globalThis as Record<string, unknown>;
+	g[TASKLIST_KEY] = getter;
+}
+
+/** The verify_item command for a task: given, else the tasklist probe, else the last one used for it, else one in backticks in the task text. */
 export function resolveCommand(state: GateState, task: string, given: unknown): string | undefined {
 	if (typeof given === "string" && given.trim()) return given.trim();
+	const tl = tasklistProbeGetter();
+	if (tl) {
+		const probe = tl(task);
+		if (probe) return probe;
+	}
 	for (const [key, command] of state.commands) if (sameTask(key, task)) return command;
 	return commandFromText(task);
 }
