@@ -48,7 +48,7 @@ describe("tasklist ledger mirror", () => {
 		expect(ledger.items.map(i => [i.content, i.status, i.phase])).toEqual([["item 1", "completed", "P"], ["item 2", "in_progress", "P"], ["item 3", "pending", "P"]]);
 		expect(ledger.items[1].verify).toMatchObject({ runs: 1, last_exit: 0 });
 		expect(ledger.items[1].probe).toBe("node p.mjs");
-		expect(ledger.list_check).toMatchObject({ requested: 0, listed: 3, missing: [] });
+		expect(ledger.list_check).toMatchObject({ requested: 3, listed: 3, missing: [] });
 		expect(s.listCheckDone).toBe(true);
 	});
 
