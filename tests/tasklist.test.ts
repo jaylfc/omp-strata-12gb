@@ -2,8 +2,9 @@ import { describe, expect, test, beforeEach } from "bun:test";
 import * as t from "../agent/extensions/tasklist.ts";
 import * as d from "../agent/extensions/done-gate.ts";
 
-const modes = { goal: "on", todo: "on", scope: "on" } as const;
-const phases = (tasks: Array<[string, string]>, name = "P") => ({ op: "init", phases: [{ name, tasks: tasks.map(([content, status]) => ({ content, status })) }] });
+function phases(tasks: Array<[string, string]>, name = "P") {
+  return { op: "init", phases: [{ name, tasks: tasks.map(([content, status]) => ({ content, status })) }] };
+}
 
 function seeded(tasks: Array<[string, string]>, name = "P") {
   const s = d.newState();
@@ -52,19 +53,19 @@ describe("tasklist ledger mirror", () => {
 
 describe("tasklist list check", () => {
   test("objective with 6 numbered items and init of 5 gives one refusal quoting missing line", () => {
-    const objective = "Do these:\n1. First item\n2. Second item\n3. Third item\n4. Fourth item\n5. Fifth item\n6. Sixth item";
+    const objective = "Do these:\n1. First item\n2. Second item\n3. Third item\n4. Fourth item\n5. Fifth item\n6. Final task";
     const state = t.newTasklistState();
-    const result = t.listCheck(state, objective, [["1", "pending"], ["2", "pending"], ["3", "pending"], ["4", "pending"], ["5", "pending"]]);
+    const result = t.listCheck(state, objective, [["First item", "pending"], ["Second item", "pending"], ["Third item", "pending"], ["Fourth item", "pending"], ["Fifth item", "pending"]]);
     expect(result.block).toBe(true);
-    expect(result.reason).toContain("6. Sixth item");
+    expect(result.reason).toContain("Final task");
     expect(result.reason).toContain("todo append");
   });
 
   test("second init with all items goes through and is logged", () => {
-    const objective = "Do these:\n1. First item\n2. Second item\n3. Third item\n4. Fourth item\n5. Fifth item\n6. Sixth item";
+    const objective = "Do these:\n1. First item\n2. Second item\n3. Third item\n4. Fourth item\n5. Fifth item\n6. Final task";
     const state = t.newTasklistState();
-    t.listCheck(state, objective, [["1", "pending"], ["2", "pending"], ["3", "pending"], ["4", "pending"], ["5", "pending"]]);
-    const result = t.listCheck(state, objective, [["1", "pending"], ["2", "pending"], ["3", "pending"], ["4", "pending"], ["5", "pending"], ["6", "pending"]]);
+    t.listCheck(state, objective, [["First item", "pending"], ["Second item", "pending"], ["Third item", "pending"], ["Fourth item", "pending"], ["Fifth item", "pending"]]);
+    const result = t.listCheck(state, objective, [["First item", "pending"], ["Second item", "pending"], ["Third item", "pending"], ["Fourth item", "pending"], ["Fifth item", "pending"], ["Final task", "pending"]]);
     expect(result.block).toBeFalsy();
     expect(result.log?.message).toBe("tasklist: list check passed");
   });
@@ -91,11 +92,12 @@ describe("tasklist cadence", () => {
     const ledger = { version: 1, goal: { id: "g1", objective_sha: "abc", requested_items: 6 }, items, list_check: { requested: 6, listed: 6, missing: [], checked_at: Date.now() } };
     state.ledger = ledger;
     state.callCount = 0;
-    state.lastInjectionText = "";
+    state.lastActiveItem = "";
 
     const injections: string[] = [];
     for (let i = 1; i <= 20; i++) {
-      const result = t.maybeInject(state, i % 6 === 0 || i === 7, "item 2");
+      const activeChanged = i === 7; // simulate active item change after todo result at call 7
+      const result = t.maybeInject(state, activeChanged, "item 2");
       if (result?.additionalContext) injections.push(result.additionalContext);
     }
 
@@ -118,7 +120,7 @@ describe("tasklist cadence", () => {
     const items = [{ content: "item 1", phase: "P", status: "completed" }];
     const ledger = { version: 1, goal: { id: "g1", objective_sha: "abc", requested_items: 1 }, items, list_check: { requested: 1, listed: 1, missing: [], checked_at: Date.now() } };
     state.ledger = ledger;
-    const result = t.maybeInject(state, true, "item 1");
+    const result = t.maybeInject(state, false, "item 1");
     expect(result?.additionalContext).toBeUndefined();
   });
 });

@@ -29,12 +29,12 @@
 const BLOCK_AFTER = 3;
 /** Empty string refuses subagents. A selector pins them to that model. */
 const SIDE_MODEL = "mac/side-model";
-const EXEMPT = new Set(["wait", "job", "irc", "yield", "todo", "goal", "verify_item", "lesson_propose"]);
+const EXEMPT = new Set(["wait", "job", "irc", "yield", "todo", "goal", "verify_item", "lesson_propose", "tasklist_probe"]);
 /** omp 18.6.1 calls extension tools by writing JSON to xd://<tool>. Re-running an item's probe after a fix is not a loop. */
 function exempt(name: string, args: unknown): boolean {
 	if (EXEMPT.has(name)) return true;
 	const path = args && typeof args === "object" ? (args as { path?: unknown }).path : undefined;
-	return name === "write" && typeof path === "string" && /^xd:\/\/(?:verify_item|lesson_propose)\b/.test(path);
+	return name === "write" && typeof path === "string" && /^xd:\/\/(?:verify_item|lesson_propose|tasklist_probe)\b/.test(path);
 }
 /**
  * Read-only tools may repeat while they succeed: after compaction or output

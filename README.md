@@ -101,6 +101,8 @@ On 2026-10-06 the coder declared nine goal items done; an independent check foun
 
 **`lessons.ts`** reads `agent/lessons.jsonl`, one JSON object per line: `id`, `tags`, `lesson` (under 320 characters), `source`, `added`. Tags are `path:<glob>` (a file read, edited, or written, or a path in a bash command), `cmd:<regex>` (a bash command or eval cell), `text:<regex>` (a read file's text or an edit's new text), and `topic:<regex>` (a todo or goal call). After a matching result, up to 3 lessons not yet shown in the session are added as `[lesson ID] …`; a restart re-reads the session and skips them. The seed lessons come from the 2026-10-06 verification and the lab journal. `lesson_propose` (`xd://lesson_propose`) appends `{tags, lesson, evidence, probe}` to `agent/lessons-proposed.jsonl`, but only after a probe failed in the session: a `verify_item` or probe command with a non-zero exit. A gate's refusal does not count. A person (or Claude) moves good proposals into the repo's `agent/lessons.jsonl`. The extension never writes `lessons.jsonl`, and `apply.sh` never touches the proposals.
 
+**`tasklist.ts`** mirrors the omp todo state into a local ledger (`.omp-strata/tasks.json`, gitignored) and never reads it back as authority. After every `todo` result and `verify_item` run it atomically rewrites the ledger with items, their status, probes, and verification history. On the first `todo init` it checks the objective for enumerated items (numbered lines, bullets, `N.` and `(a)` forms); if the init lists fewer or an item shares no content word with any listed item, it refuses once with the missing lines and asks for `todo append`. Every 6 tool calls and after any `todo` result that changes the active item, it injects the open items with the active item and its probe marked: `Open tasks (2 of 6 done). Now: <active>. Check: <probe>` followed by the open items as checkboxes; the text is byte-identical across repeats so omp's dedupe works. A new device `xd://tasklist_probe` sets or updates an item's probe; print/list/syntax-only commands are refused via `done-gate`'s `verifyCommandProblem`. When `verify_item` is called without `command`, the ledger probe for that item is used before falling back to the last command or backticks in the task text. `fail-loop-resteer.ts` treats `tasklist_probe` as repeatable. Switch: `OMP_STRATA_TASKLIST` = `on`, `log` (default), `off`. In `log` mode the ledger is written and injections are logged but not sent.
+
 **Constraint pinning** (`handoff-speed.ts`, `session_compact`): after each compaction, one hidden message with the goal objective verbatim (up to 1,500 characters), the todo item in progress and the open count, and RULES.md verbatim if the system prompt does not already contain it. omp re-sends RULES.md in the system prompt, so in practice the note is the goal and the item, about 300 characters. It goes in as a steer mid-run, or before the next turn when idle.
 
 | Switch | Values (default first) | Effect |
@@ -111,6 +113,7 @@ On 2026-10-06 the coder declared nine goal items done; an independent check foun
 | `OMP_STRATA_DONE_EVIDENCE` | `verify`, `probe` | What counts as evidence (above). |
 | `OMP_STRATA_GOAL_VERIFY` | `on`, `log`, `off` | The checklist round on `goal complete`. |
 | `OMP_STRATA_LESSONS` | `on`, `off` | Lesson notes and `lesson_propose`. `OMP_STRATA_LESSONS_FILE` and `OMP_STRATA_LESSONS_PROPOSED` override the paths. |
+| `OMP_STRATA_TASKLIST` | `log`, `on`, `off` | Ledger mirror, list check, re-injection, probe map. `log` writes ledger and logs injections. |
 | `OMP_STRATA_PIN` | `on`, `off` | The note after compaction. `OMP_STRATA_RULES_FILE` overrides the RULES.md path. |
 
 Set them in the environment that starts `omp-strata`. Every decision is logged in the omp log as `done-gate: …`, `goal-verify: …`, `lessons: …`, or `strata pin: …`. To see what the coder was told, look for `<system-interrupt reason="done_gate">` and `reason="goal_verify"` in the session.
@@ -295,6 +298,7 @@ agent/extensions/done-gate.ts            evidence gate on todo done and goal com
 agent/extensions/goal-verify.ts          verification checklist before goal complete, decided by exit codes
 agent/extensions/lessons.ts              lessons shown when their tags match, lesson_propose tool
 agent/extensions/watcher.ts              off-node progress watcher: digest, typed verdict, log or steer, done-gate arming
+agent/extensions/tasklist.ts             ledger mirror, list check, re-injection, probe map
 agent/lessons.jsonl                      curated lessons (one JSON object per line)
 tests/                                   bun tests for the extensions (`bun test tests/`)
 tools/webcheck/                          one-command browser check that prints JSON
