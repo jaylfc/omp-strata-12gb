@@ -23,6 +23,9 @@ SIDE_MODEL_NAME="Side model"
 SIDE_CONTEXT=32768
 # SIDE_SUBAGENTS=off refuses subagents instead of pinning them to the side model.
 SIDE_SUBAGENTS=on
+# SIDE_MACHINE=off: there is no second machine. Judge, task and subagents run on the coder,
+# with no fallback chain (a chain from the coder to itself only repeats the failure).
+SIDE_MACHINE=on
 settings="${XDG_CONFIG_HOME:-$HOME/.config}/omp-strata/settings.env"
 if [[ -f "$settings" ]]; then
   # shellcheck disable=SC1090
@@ -33,9 +36,16 @@ if [[ -z "$SIDE_BASE_URL" || -z "$SIDE_MODEL_ID" || -z "$SIDE_MODEL_NAME" || ! "
   exit 1
 fi
 side_model="mac/$SIDE_MODEL_ID"
+if [[ "$SIDE_MACHINE" == off ]]; then
+  side_model="$(python3 -c 'import sys, yaml; print(yaml.safe_load(open(sys.argv[1]))["modelRoles"]["smol"])' "$root/agent/strata.config.yml")"
+fi
 # A role that names the side provider must name its one model, or omp would
 # route that role to a model models.yml does not have.
 for role in VISION_MODEL SMOL_MODEL COMPACTION_MODEL; do
+  if [[ "${!role}" == mac/* && "$SIDE_MACHINE" == off ]]; then
+    echo "settings.env: $role=${!role} but SIDE_MACHINE=off; drop it or name a strata/ model" >&2
+    exit 1
+  fi
   if [[ "${!role}" == mac/* && "${!role}" != "$side_model" ]]; then
     echo "settings.env: $role=${!role} but the side model is $side_model; set SIDE_MODEL_ID" >&2
     exit 1
@@ -153,7 +163,7 @@ PY
 fi
 # SIDE_FALLBACK=off: a failed side-model call errors instead of continuing on
 # the coder. Each fallback is a cold read on the coder and evicts its prompt cache.
-[[ "$SIDE_FALLBACK" == off ]] && overrides+=("nofallback")
+[[ "$SIDE_FALLBACK" == off || "$SIDE_MACHINE" == off ]] && overrides+=("nofallback")
 # SMOL_MODEL: omp's small background calls (skill routing hints and similar,
 # ~400 prompt tokens) go to modelRoles.smol. On the coder each one evicts the
 # coder's conversation; with --kv-persist that is a 1-2 GB save and a restore.
@@ -199,7 +209,7 @@ def rename(node, old, new):
 for item in overrides:
     if item.startswith("side="):
         cfg = rename(cfg, "mac/side-model", item.split("=", 1)[1])
-        print(f"judge, task, and fallback chain on {item.split('=', 1)[1]} (SIDE_MODEL_ID set)")
+        print(f"judge, task, and fallback chain on {item.split('=', 1)[1]} (SIDE_MODEL_ID set, or SIDE_MACHINE=off)")
 for item in overrides:
     if item.startswith("vision="):
         cfg.setdefault("modelRoles", {})["vision"] = item.split("=", 1)[1]
@@ -213,7 +223,7 @@ for item in overrides:
     elif item == "nofallback":
         cfg.setdefault("retry", {})["fallbackChains"] = {}
         cfg["retry"]["modelFallback"] = False
-        print("retry.modelFallback false, fallbackChains cleared (SIDE_FALLBACK=off)")
+        print("retry.modelFallback false, fallbackChains cleared (SIDE_FALLBACK=off or SIDE_MACHINE=off)")
 yaml.safe_dump(cfg, open(dst, "w"), sort_keys=False)
 PY
 fi
