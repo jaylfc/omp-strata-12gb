@@ -203,6 +203,7 @@ Our development setup includes a Mac mini M4 with 24 GB alongside the 12 GB Stra
 | `SIDE_MODEL_NAME` | `Side model` | The display name. Quote it when it has spaces. |
 | `SIDE_CONTEXT` | `32768` | `contextWindow`. Match the context the server actually loaded. |
 | `SIDE_SUBAGENTS` | `on` | `off` installs the extension with `SIDE_MODEL = ""`, which refuses subagents. |
+| `SIDE_MACHINE` | `on` | `off` when there is no second machine: `modelRoles.judge`, `modelRoles.task` and the extension's `SIDE_MODEL` become the coder (`modelRoles.smol` in `strata.config.yml`), `retry.fallbackChains` is emptied, and a `mac/` `VISION_MODEL`, `SMOL_MODEL` or `COMPACTION_MODEL` stops the install. |
 
 `apply.sh` stops before installing anything when `VISION_MODEL`, `SMOL_MODEL`, or `COMPACTION_MODEL` names a `mac/` model other than `mac/<SIDE_MODEL_ID>`. A single-card install can leave the provider unused. Judge and subagent calls continue on the coder when the side machine does not answer.
 
