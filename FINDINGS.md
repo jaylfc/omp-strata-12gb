@@ -1,6 +1,6 @@
 # Findings
 
-These are measured results from running this profile on one machine: an RTX 3060 12 GB, an i5-10600, 78 GB of DDR4, and Strata serving `qwen3.8-flash-next-coder-iq1_m` with a 262144 context to omp 18.4.4. The test workload is a long autonomous `/goal` session on a browser game, plus a 40-run benchmark. Each section gives the date, the numbers, and the setting it led to. [README.md](README.md) lists every setting.
+These are measured results from running this profile on one machine: an RTX 3060 12 GB, an i5-10600, 78 GB of DDR4, and Strata serving `qwen3.8-flash-next-coder-iq1_m` with a 262144 context to omp 18.4.4 until 2026-10-06 and 18.6.1 since (see [UPSTREAM.md](UPSTREAM.md)). The test workload is a long autonomous `/goal` session on a browser game, plus a 40-run benchmark. Each section gives the date, the numbers, and the setting it led to. [README.md](README.md) lists every setting.
 
 ## Recommended coder settings
 
