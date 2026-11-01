@@ -18,7 +18,7 @@ providers:
         input: [text, image]
         imageInputDecoder: stb
         contextWindow: 262144
-        maxTokens: 7168
+        maxTokens: 16384
         cost:
           input: 0
           output: 0

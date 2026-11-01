@@ -6,7 +6,7 @@ These are measured results from running this profile on one machine: an RTX 3060
 
 | Setting | Value | Section |
 | --- | --- | --- |
-| Thinking | `reasoning_effort: medium`, `reasoning_budget_tokens: 3072`, `maxTokens: 7168`, `defaultThinkingLevel: medium` | [Thinking level](#thinking-level-2026-10-05) |
+| Thinking | `reasoning_effort: medium`, `reasoning_budget_tokens: 3072`, `maxTokens: 16384`, `defaultThinkingLevel: medium` | [Thinking level](#thinking-level-2026-10-05), [Reply cap](#reply-cap-2026-11-01) |
 | Sampling | `temperature: 1.0`, `top_p: 0.95`, `top_k: 20` | [Sampling](#sampling-2026-10-05) |
 | Compaction | `thresholdTokens: 98304`, `keepRecentTokens: 40000`, methods `shake`, `handoff`, `soft` | [Compaction](#compaction-2026-10-05) |
 | Never | thinking off for agent work; greedy decoding | |
@@ -166,3 +166,7 @@ Replaying that session's claims through `done-gate.ts` with the heuristic rule (
 The heuristic stops the bulk claims, but it lets the 14:39 completion through on the simulator. A pattern match on command text cannot tell a real probe from a flattering one. So the default rule is `verify`. `verify_item` runs the item's probe in the extension and records its exit code. `done` needs that item's latest run to have passed after the last edit. The first `goal complete` gets a per-criterion checklist (`goal-verify.ts`), and the goal completes only when the latest run of every criterion exited 0. Self-verification by the agent catches about 61% of wrong solutions and repairs about half of those (arXiv 2609.38812); a dedicated verification tool changes behaviour where a prompt to verify does not (arXiv 2610.01618).
 
 Deferred: a verifier in a fresh context. omp 18.6.1 gives an extension no context that is fresh and runs tools: `runEphemeralTurn` is one reply on the session's own model, with no tool execution. `task` subagents here are pinned to the side model, with the coder as fallback. The probes already run outside the coder; the round that lists and judges the criteria does not.
+
+## Reply cap (2026-11-01)
+
+Across 53 omp session logs, 33 coder replies stopped on length, 24 of them at exactly 7168 tokens. The cut turns were about 3k thinking tokens (the 3072 budget is applied) followed by a file body of about 4k tokens in a `write` call. omp 18.6.1 executed none of the cut tool calls, and none of the 188 writes compared on disk was a truncated prefix, so the cost was a lost turn, not a broken file. The cap is now 16384, which also matches the shared `max_tokens` default on the live Strata server. Recount length stops after the next long session.
