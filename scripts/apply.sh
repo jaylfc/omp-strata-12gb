@@ -189,7 +189,8 @@ PY
   overrides+=("softfirst")
 fi
 if (( ${#overrides[@]} )); then
-  config_yml="$(mktemp --suffix=.yml)"
+  tmp_config="$(mktemp --suffix=.yml)"
+  config_yml="$tmp_config"
   trap 'rm -f "$config_yml"' EXIT
   python3 - "$root/agent/strata.config.yml" "$config_yml" "${overrides[@]}" <<'PY'
 import sys, yaml
@@ -239,7 +240,7 @@ fi
 
 keys="$(mktemp)"
 pairs="$(mktemp)"
-trap 'rm -f "$keys" "$pairs"' EXIT
+trap 'rm -f "$keys" "$pairs" ${tmp_config:+"$tmp_config"}' EXIT
 "$omp_bin" --profile=omp-strata config list --json >"$keys"
 python3 "$root/scripts/config-pairs.py" "$config_yml" "$keys" >"$pairs"
 while IFS= read -r -d '' key && IFS= read -r -d '' value; do

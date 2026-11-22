@@ -53,7 +53,8 @@ if (( rc > 1 )); then
   rm -f "$settings_dir/settings.env.tmp"
   exit 1
 fi
-chmod --reference="$settings_dir/settings.env" "$settings_dir/settings.env.tmp" 2>/dev/null || true
+mode=$(stat -c %a "$settings_dir/settings.env" 2>/dev/null || stat -f %Lp "$settings_dir/settings.env" 2>/dev/null || echo 600)
+chmod "$mode" "$settings_dir/settings.env.tmp"
 {
   echo "STRATA_VISION=$mode"
   [[ -n "$model" ]] && echo "VISION_MODEL=$model"
